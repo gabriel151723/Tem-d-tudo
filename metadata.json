@@ -1,0 +1,6 @@
+{
+  "name": "MANGUEIRAS — Engenharia que Move",
+  "description": "Mangueiras Auto Peças e Serviços. Peças para linha diesel, pesados, máquinas agrícolas, utilitários, linha leve e embarcações com experiência 3D interativa, catálogo sincronizado e cotação direta via WhatsApp.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

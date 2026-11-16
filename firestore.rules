@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['id', 'sku', 'name', 'category', 'system', 'stock', 'demo']) &&
+        data.keys().hasOnly(['id', 'sku', 'name', 'oem', 'category', 'system', 'application', 'stock', 'demo']) &&
+        data.id is string && data.id.size() >= 1 && data.id.size() <= 128 && data.id.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.sku is string && data.sku.size() >= 1 && data.sku.size() <= 64 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 200 &&
+        (!('oem' in data) || (data.oem is string && data.oem.size() <= 120)) &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 160 &&
+        data.system is string && data.system.size() >= 1 && data.system.size() <= 120 &&
+        (!('application' in data) || (data.application is string && data.application.size() <= 600)) &&
+        data.stock is number && data.stock >= 0 && data.stock <= 1000000 &&
+        data.demo is bool;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['id', 'protocol', 'status', 'customerName', 'customerPhone', 'customerCity', 'itemsCount', 'itemsSummary', 'createdAt']) &&
+        data.keys().hasOnly(['id', 'protocol', 'status', 'customerName', 'customerPhone', 'customerCity', 'vehicle', 'notes', 'itemsCount', 'itemsSummary', 'createdAt']) &&
+        data.id is string && data.id.size() >= 1 && data.id.size() <= 128 && data.id.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.protocol is string && data.protocol.size() >= 1 && data.protocol.size() <= 40 &&
+        data.status is string && data.status.size() <= 40 &&
+        (data.status == 'Pendente de Cotação' || data.status == 'Em Atendimento' || data.status == 'Concluído' || data.status == 'Cancelado') &&
+        data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 120 &&
+        data.customerPhone is string && data.customerPhone.size() >= 0 && data.customerPhone.size() <= 40 &&
+        data.customerCity is string && data.customerCity.size() >= 0 && data.customerCity.size() <= 100 &&
+        (!('vehicle' in data) || (data.vehicle is string && data.vehicle.size() <= 240)) &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 4000)) &&
+        data.itemsCount is number && data.itemsCount >= 1 && data.itemsCount <= 100 &&
+        data.itemsSummary is string && data.itemsSummary.size() >= 1 && data.itemsSummary.size() <= 4000 &&
+        data.createdAt is string && data.createdAt.size() >= 1 && data.createdAt.size() <= 64;
+    }
+
+    function isValidSolicitacaoOrcamento(data) {
+      return data.keys().hasAll(['cliente', 'veiculo', 'peca_solicitada', 'status', 'data_criacao']) &&
+        data.keys().hasOnly(['cliente', 'veiculo', 'peca_solicitada', 'status', 'data_criacao', 'protocolo', 'proposta', 'observacoes']) &&
+        data.cliente is map &&
+        data.cliente.nome is string && data.cliente.nome.size() >= 1 && data.cliente.nome.size() <= 120 &&
+        data.cliente.telefone is string && data.cliente.telefone.size() >= 0 && data.cliente.telefone.size() <= 40 &&
+        data.veiculo is map &&
+        data.veiculo.modelo is string && data.veiculo.modelo.size() >= 0 && data.veiculo.modelo.size() <= 160 &&
+        data.veiculo.ano is string && data.veiculo.ano.size() >= 0 && data.veiculo.ano.size() <= 40 &&
+        data.peca_solicitada is string && data.peca_solicitada.size() >= 1 && data.peca_solicitada.size() <= 4000 &&
+        data.status is string && data.status.size() >= 1 && data.status.size() <= 40 &&
+        (!('protocolo' in data) || (data.protocolo is string && data.protocolo.size() <= 40)) &&
+        (!('proposta' in data) || (data.proposta is string && data.proposta.size() <= 2000)) &&
+        (!('observacoes' in data) || (data.observacoes is string && data.observacoes.size() <= 2000));
+    }
+
+    match /products/{productId} {
+      allow get: if isValidId(productId);
+      allow list: if resource.data.stock >= 0;
+      allow create: if isValidId(productId) && isValidProduct(incoming()) && incoming().id == productId;
+      allow update: if isValidId(productId) && isValidProduct(incoming()) && incoming().id == existing().id &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['sku', 'name', 'oem', 'category', 'system', 'application', 'stock', 'demo']);
+      allow delete: if isValidId(productId);
+    }
+
+    match /orders/{orderId} {
+      allow get: if isValidId(orderId);
+      allow list: if resource.data.itemsCount >= 1;
+      allow create: if isValidId(orderId) && isValidOrder(incoming()) && incoming().id == orderId && incoming().status == 'Pendente de Cotação';
+      allow update: if isValidId(orderId) && isValidOrder(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().protocol == existing().protocol &&
+        incoming().createdAt == existing().createdAt &&
+        existing().status != 'Concluído' &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'notes']);
+      allow delete: if isValidId(orderId);
+    }
+
+    match /solicitacoes_orcamento/{solicitacaoId} {
+      allow get: if isValidId(solicitacaoId);
+      allow list: if resource.data.status is string;
+      allow create: if isValidId(solicitacaoId) && isValidSolicitacaoOrcamento(incoming());
+      allow update: if isValidId(solicitacaoId) && isValidSolicitacaoOrcamento(incoming()) &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'peca_solicitada', 'cliente', 'veiculo', 'data_criacao', 'protocolo', 'proposta', 'observacoes']);
+      allow delete: if isValidId(solicitacaoId);
+    }
+
+    match /test/{testId} {
+      allow get: if isValidId(testId);
+    }
+  }
+}

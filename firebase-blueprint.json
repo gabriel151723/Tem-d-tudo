@@ -1,0 +1,268 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Automotive or industrial part in the Mangueiras catalog",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique product identifier",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "sku": {
+          "type": "string",
+          "description": "Stock keeping unit code",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "name": {
+          "type": "string",
+          "description": "Technical name of the component",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "oem": {
+          "type": "string",
+          "description": "OEM reference number",
+          "maxLength": 120
+        },
+        "category": {
+          "type": "string",
+          "description": "Vehicle or machine category",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "system": {
+          "type": "string",
+          "description": "Mechanical subsystem",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "application": {
+          "type": "string",
+          "description": "Technical application description",
+          "maxLength": 600
+        },
+        "stock": {
+          "type": "number",
+          "description": "Available quantity in stock"
+        },
+        "demo": {
+          "type": "boolean",
+          "description": "Whether item is from initial seed"
+        }
+      },
+      "required": ["id", "sku", "name", "category", "system", "stock", "demo"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer quote request submitted from the storefront",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique order UUID",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "protocol": {
+          "type": "string",
+          "description": "Human-readable protocol number",
+          "minLength": 4,
+          "maxLength": 40
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status of the quote",
+          "enum": ["Pendente de Cotação", "Em Atendimento", "Concluído", "Cancelado"],
+          "maxLength": 40
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Customer or company name",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "customerPhone": {
+          "type": "string",
+          "description": "Customer WhatsApp or phone",
+          "minLength": 0,
+          "maxLength": 40
+        },
+        "customerCity": {
+          "type": "string",
+          "description": "Customer city and state",
+          "minLength": 0,
+          "maxLength": 100
+        },
+        "vehicle": {
+          "type": "string",
+          "description": "Vehicle or machine details",
+          "maxLength": 240
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional technical notes",
+          "maxLength": 4000
+        },
+        "itemsCount": {
+          "type": "number",
+          "description": "Total number of distinct items"
+        },
+        "itemsSummary": {
+          "type": "string",
+          "description": "Formatted summary of requested items",
+          "maxLength": 4000
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO creation timestamp",
+          "maxLength": 64
+        }
+      },
+      "required": [
+        "id",
+        "protocol",
+        "status",
+        "customerName",
+        "customerPhone",
+        "customerCity",
+        "itemsCount",
+        "itemsSummary",
+        "createdAt"
+      ]
+    },
+    "ClienteSolicitacao": {
+      "title": "ClienteSolicitacao",
+      "description": "Customer contact map inside SolicitacaoOrcamento",
+      "type": "object",
+      "properties": {
+        "nome": {
+          "type": "string",
+          "description": "Customer full name or company name",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "telefone": {
+          "type": "string",
+          "description": "Customer WhatsApp or phone with DDD",
+          "minLength": 0,
+          "maxLength": 40
+        }
+      },
+      "required": ["nome", "telefone"]
+    },
+    "VeiculoSolicitacao": {
+      "title": "VeiculoSolicitacao",
+      "description": "Vehicle make, model and year map inside SolicitacaoOrcamento",
+      "type": "object",
+      "properties": {
+        "modelo": {
+          "type": "string",
+          "description": "Vehicle or machine brand and model",
+          "minLength": 0,
+          "maxLength": 160
+        },
+        "ano": {
+          "type": "string",
+          "description": "Vehicle or machine manufacturing year",
+          "minLength": 0,
+          "maxLength": 40
+        }
+      },
+      "required": ["modelo", "ano"]
+    },
+    "SolicitacaoOrcamento": {
+      "title": "SolicitacaoOrcamento",
+      "description": "On-demand quote request stored in solicitacoes_orcamento",
+      "type": "object",
+      "properties": {
+        "cliente": {
+          "type": "object",
+          "$ref": "#/entities/ClienteSolicitacao",
+          "description": "Customer contact details (nome, telefone)"
+        },
+        "veiculo": {
+          "type": "object",
+          "$ref": "#/entities/VeiculoSolicitacao",
+          "description": "Vehicle details (modelo, ano)"
+        },
+        "peca_solicitada": {
+          "type": "string",
+          "description": "Requested part description, OEM code or observations",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "status": {
+          "type": "string",
+          "description": "Processing status of the quote request",
+          "enum": ["pendente", "em_atendimento", "concluido", "cancelado"],
+          "maxLength": 40
+        },
+        "data_criacao": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp"
+        },
+        "protocolo": {
+          "type": "string",
+          "description": "Optional protocol reference assigned by storefront or ERP",
+          "maxLength": 40
+        },
+        "proposta": {
+          "type": "string",
+          "description": "Optional commercial quote proposal written by the management system",
+          "maxLength": 2000
+        },
+        "observacoes": {
+          "type": "string",
+          "description": "Optional internal or customer observations from the management system",
+          "maxLength": 2000
+        }
+      },
+      "required": ["cliente", "veiculo", "peca_solicitada", "status", "data_criacao"]
+    },
+    "TestConnection": {
+      "title": "TestConnection",
+      "description": "Diagnostic document used for Firestore connectivity verification",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Connection status flag",
+          "maxLength": 32
+        }
+      }
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": {
+        "$ref": "#/entities/Product"
+      },
+      "description": "Public storefront catalog products synchronized with the ERP registration app"
+    },
+    "/orders/{orderId}": {
+      "schema": {
+        "$ref": "#/entities/Order"
+      },
+      "description": "Customer quote orders submitted from the storefront to the ERP system"
+    },
+    "/solicitacoes_orcamento/{solicitacaoId}": {
+      "schema": {
+        "$ref": "#/entities/SolicitacaoOrcamento"
+      },
+      "description": "On-demand quote requests submitted via addDoc with serverTimestamp"
+    },
+    "/test/{testId}": {
+      "schema": {
+        "$ref": "#/entities/TestConnection"
+      },
+      "description": "Connectivity verification endpoint for getDocFromServer"
+    }
+  }
+}
